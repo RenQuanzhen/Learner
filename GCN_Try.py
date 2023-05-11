@@ -39,6 +39,7 @@ epoch = 10
 #创建网络 3
 # gcn_test_3=GCN13()
 #创建网络 4
+device=torch.device('cuda'if torch.cuda.is_available() else "cpu")#电脑主机的选择
 VGG16=vgg16(True, progress=True,num_classes=10)#定于分类的类别
 #创建网络 5
 gcn_test_4=gcn13_2(Class)
@@ -47,28 +48,28 @@ gcn_test_4=gcn13_2(Class)
 loss_fn = nn.CrossEntropyLoss()
 
 #学习率
-warm_up = 0.05
-decay_rate = 0.95
-decay_steps = 20
-# 自定义学习率衰减算法
-def self_adjust_learning_rate(optimizer, train_sum):
-    warm_up_step = int(epoch * warm_up)
-    if train_sum < warm_up_step:
-        lr = 0.1 * LR + (LR - 0.1 * LR) / warm_up_step * train_sum
-    else:
-        lr = LR * (decay_rate ** ((train_sum - warm_up_step) // decay_steps))
-    for param_group in optimizer.param_groups:
-        param_group["lr"] = lr
-    return lr
+# warm_up = 0.05
+# decay_rate = 0.95
+# decay_steps = 20
+# # 自定义学习率衰减算法
+# def self_adjust_learning_rate(optimizer, train_sum):
+#     warm_up_step = int(epoch * warm_up)
+#     if train_sum < warm_up_step:
+#         lr = 0.1 * LR + (LR - 0.1 * LR) / warm_up_step * train_sum
+#     else:
+#         lr = LR * (decay_rate ** ((train_sum - warm_up_step) // decay_steps))
+#     for param_group in optimizer.param_groups:
+#         param_group["lr"] = lr
+#     return lr
 # learning_rate = 0.01
 # 1e-2=1 x (10)^(-2) = 1 /100 = 0.01
-LR = 1e-2  #初始学习率数值
+LR = 0.001  #初始学习率数值
 # 优化器
 #optimizer = torch.optim.SGD(gcn_test.parameters(),learning_rate)  #网络1
 #optimizer = torch.optim.SGD(gcn_test_2.parameters(),learning_rate)  #网络2
 # optimizer = torch.optim.SGD(gcn_test_3.parameters(),learning_rate)  #网络3
 # optimizer = torch.optim.SGD(VGG16.parameters(),lr=LR)  #网络4
-optimizer = torch.optim.SGD(gcn_test_4.parameters(),lr=LR)  #网络5
+optimizer = torch.optim.SGD(gcn_test_4.parameters(),LR)  #网络5
 
 # 设置训练网络的一些参数
 # 记录训练的次数
@@ -99,9 +100,11 @@ for i in range(epoch):  #大循环：训练轮数
         loss = loss_fn(outputs, targets)
         loss.backward()
         optimizer.step()
-        lr = self_adjust_learning_rate(optimizer, i)  # 自定义学习率衰减算法
+        # lr = self_adjust_learning_rate(optimizer, i)  # 自定义学习率衰减算法
 
         total_train_step = total_train_step + 1
+        if total_train_step % 20==0 :
+            LR=LR/10
         if total_train_step % 100 == 0:  #每百次输出一次结果
             print("训练次数：{}, Loss: {}".format(total_train_step, loss.item()))
             writer.add_scalar("train_loss", loss.item(), total_train_step)  #绘制损失函数图（训练集上）
@@ -146,6 +149,11 @@ for i in range(epoch):  #大循环：训练轮数
     # torch.load("Result_VGG16_test/VGG16_test{}.pth".format(i))  # 加载已保存的模型
 
 writer.close()
+
+
+    
+
+
 
 
     
